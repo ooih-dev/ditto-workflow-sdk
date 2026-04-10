@@ -122,6 +122,7 @@ function coerceArgToType(raw: any, type: string): any {
     return raw;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function coerceArgsByAbi(signature: string, rawArgs: any[]): any[] {
     try {
         const types = extractInputTypesFromAbiSignature(signature);

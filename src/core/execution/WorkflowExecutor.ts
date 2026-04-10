@@ -1,4 +1,4 @@
-import { Hex, createPublicClient, http, encodeFunctionData, parseAbiItem, AbiFunction, Address } from 'viem';
+import { Hex, createPublicClient, http, encodeFunctionData, Address } from 'viem';
 import {
 } from "@zerodev/sdk";
 import { createBundlerClient, createPaymasterClient, UserOperationReceipt, UserOperation } from 'viem/account-abstraction';
@@ -600,7 +600,7 @@ export async function executeJob(
                 estimation.callGasLimit +
                 (estimation.paymasterVerificationGasLimit ?? BigInt(0)) +
                 (estimation.paymasterPostOpGasLimit ?? BigInt(0));
-            const totalGasEstimate = totalGasUnits * feePerGas;
+            const _totalGasEstimate = totalGasUnits * feePerGas; // eslint-disable-line @typescript-eslint/no-unused-vars
             // Use buffered callGasLimit from userOperation
             const bufferedCallGasLimit = BigInt(userOperation.callGasLimit);
             const bufferedTotalGasUnits =

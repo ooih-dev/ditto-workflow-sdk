@@ -129,7 +129,7 @@ export class Workflow implements IWorkflow {
         try {
           const parsed = JSON.parse(val);
           if (Array.isArray(parsed)) return parsed;
-        } catch { }
+        } catch { /* parse failure is expected for non-JSON strings */ }
         return val;
       }
       return val;
@@ -161,7 +161,7 @@ export class Workflow implements IWorkflow {
             if (fn.outputs && fn.outputs.length > 0) {
               returnType = fn.outputs[0].type;
             }
-          } catch { }
+          } catch { /* ABI parse failure is non-fatal */ }
 
           let condOp = onchainCondition.condition;
           if (typeof condOp === 'string') {

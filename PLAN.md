@@ -71,7 +71,7 @@ Security audit (2026-04-09) identified 3 CRITICAL and 5 HIGH issues across Workf
 - Deep/prototype-polluting payload rejected (Task 7)
 Each scenario must have a pass case and a fail case. Use mocks where on-chain interaction is needed.
 
-## Task 10: [ ] Final verification — build, lint, full test suite
+## Task 10: [x] Final verification — build, lint, full test suite
 **Files:** n/a (CI-style run)
 **Goal:** Verify the whole branch is green before declaring done.
 **Steps:**
