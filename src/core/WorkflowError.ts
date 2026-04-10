@@ -9,6 +9,8 @@ export enum WorkflowErrorCode {
     SESSION_SIGNATURE_ERROR = 'SESSION_SIGNATURE_ERROR',
     IPFS_URL_VALIDATION = 'IPFS_URL_VALIDATION',
     DATA_REF_ABI_ERROR = 'DATA_REF_ABI_ERROR',
+    SERIALIZE_DEPTH_EXCEEDED = 'SERIALIZE_DEPTH_EXCEEDED',
+    PROTOTYPE_POLLUTION = 'PROTOTYPE_POLLUTION',
 }
 
 export class WorkflowError extends Error {
@@ -83,6 +85,33 @@ export class DataRefAbiError extends WorkflowError {
             { functionSignature }
         );
         this.name = 'DataRefAbiError';
+    }
+}
+
+export class WorkflowSerializeDepthError extends WorkflowError {
+    constructor(
+        public readonly depth: number,
+        public readonly maxDepth: number
+    ) {
+        super(
+            WorkflowErrorCode.SERIALIZE_DEPTH_EXCEEDED,
+            `Serialization depth ${depth} exceeds maximum allowed depth of ${maxDepth}`,
+            { depth, maxDepth }
+        );
+        this.name = 'WorkflowSerializeDepthError';
+    }
+}
+
+export class PrototypePollutionError extends WorkflowError {
+    constructor(
+        public readonly key: string
+    ) {
+        super(
+            WorkflowErrorCode.PROTOTYPE_POLLUTION,
+            `Potentially dangerous key "${key}" detected in workflow data`,
+            { key }
+        );
+        this.name = 'PrototypePollutionError';
     }
 }
 

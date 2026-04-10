@@ -46,7 +46,7 @@ Security audit (2026-04-09) identified 3 CRITICAL and 5 HIGH issues across Workf
 **Fix:** If the ABI fragment for a DataRef lacks a `outputs` definition, throw `DataRefAbiError` at resolution time. Log the exact function signature for debuggability. Never return undefined from a DataRef resolution on "ABI says no output".
 **Tests:** ABI with outputs resolves correctly; ABI without outputs throws; malformed ABI throws with clear message.
 
-## Task 7: [ ] Recursion depth limit + prototype pollution guard in WorkflowSerializer
+## Task 7: [x] Recursion depth limit + prototype pollution guard in WorkflowSerializer
 **Files:** `src/core/builders/WorkflowSerializer.ts`
 **Problem:** `WorkflowSerializer` recursively walks workflow objects without depth limit — a malicious deeply-nested payload can stack-overflow the process. It also copies keys without filtering `__proto__` / `constructor` / `prototype`, enabling prototype pollution via crafted JSON input.
 **Fix:** Introduce `MAX_SERIALIZE_DEPTH = 32`. Track depth through recursion; throw `WorkflowSerializeDepthError` if exceeded. When iterating object keys, skip `__proto__`, `constructor`, `prototype`. Use `Object.create(null)` or a `Map` for intermediate accumulators where possible.

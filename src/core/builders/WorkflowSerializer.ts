@@ -5,8 +5,45 @@ import { SerializedWorkflowData } from '../../storage/IWorkflowStorage';
 import { Workflow } from '../Workflow';
 import { createSession } from './SessionService';
 import { SerializedWorkflowDataSchema } from '../validation/WorkflowSchema';
-import { WorkflowError, WorkflowErrorCode } from '../WorkflowError';
+import { WorkflowError, WorkflowErrorCode, WorkflowSerializeDepthError, PrototypePollutionError } from '../WorkflowError';
 import { OnchainConditionOperator, type Step as IStep, type Job as IJob } from '../types';
+
+/** Maximum recursion depth for serialization to prevent stack overflow from malicious payloads */
+export const MAX_SERIALIZE_DEPTH = 32;
+
+/** Keys that must never be copied during object traversal to prevent prototype pollution */
+const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
+/**
+ * Recursively sanitize an object: enforce depth limit and strip prototype-pollution keys.
+ * Returns a clean copy using null-prototype intermediates.
+ */
+export function sanitizeObject<T>(obj: T, depth: number = 0): T {
+    if (depth > MAX_SERIALIZE_DEPTH) {
+        throw new WorkflowSerializeDepthError(depth, MAX_SERIALIZE_DEPTH);
+    }
+
+    if (obj === null || obj === undefined) {
+        return obj;
+    }
+
+    if (typeof obj !== 'object') {
+        return obj;
+    }
+
+    if (Array.isArray(obj)) {
+        return obj.map((item) => sanitizeObject(item, depth + 1)) as unknown as T;
+    }
+
+    const result: Record<string, unknown> = Object.create(null);
+    for (const key of Object.keys(obj)) {
+        if (DANGEROUS_KEYS.has(key)) {
+            throw new PrototypePollutionError(key);
+        }
+        result[key] = sanitizeObject((obj as Record<string, unknown>)[key], depth + 1);
+    }
+    return result as T;
+}
 
 function conditionEnumToString(cond: OnchainConditionOperator): string {
     switch (cond) {
@@ -169,7 +206,10 @@ export async function serialize(
 export async function deserialize(
     serializedData: SerializedWorkflowData
 ): Promise<Workflow> {
-    const validationResult = SerializedWorkflowDataSchema.safeParse(serializedData);
+    // Sanitize input before processing: depth limit + prototype pollution guard
+    const sanitizedData = sanitizeObject(serializedData);
+
+    const validationResult = SerializedWorkflowDataSchema.safeParse(sanitizedData);
     if (!validationResult.success) {
         throw new WorkflowError(
             WorkflowErrorCode.INVALID_SERIALIZED_DATA,
