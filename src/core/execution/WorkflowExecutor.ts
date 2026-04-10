@@ -407,6 +407,7 @@ export async function executeJob(
           
           const wasmRef: WasmRef = {
             wasmHash: wasmStepAny.wasmHash!,
+            contentHash: wasmStepAny.contentHash || '',
             input: wasmStepAny.wasmInput || {},
             id: wasmId,
             timeoutMs: wasmStepAny.wasmTimeoutMs,

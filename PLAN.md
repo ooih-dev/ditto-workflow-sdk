@@ -16,7 +16,7 @@ Security audit (2026-04-09) identified 3 CRITICAL and 5 HIGH issues across Workf
 **Fix:** Call `WorkflowValidator.validate(workflow)` at the start of both `submit()` and `execute()`. Throw `WorkflowValidationError` (or extend `WorkflowError`) with the aggregated Zod issues on failure. No silent catches.
 **Tests:** Add `test/WorkflowValidator.spec.ts` cases: valid workflow passes; missing required fields throw; malformed Step/Trigger rejected; negative value fields rejected. Add integration test that mocks `submit()` and asserts it throws for an invalid workflow.
 
-## Task 2: [ ] WASM content hash verification on IPFS download
+## Task 2: [x] WASM content hash verification on IPFS download
 **Files:** `src/core/WasmRefResolver.ts`, `src/storage/IpfsStorage.ts`
 **Problem:** WASM blobs are fetched from IPFS by URL/CID and executed without verifying that the returned bytes match the expected hash. A malicious IPFS gateway could serve substituted bytes.
 **Fix:** Require an expected `hash` (sha256 of the WASM bytes, hex-encoded) in the DataRef / WasmRef descriptor. After download, compute sha256 of the bytes and compare. On mismatch, throw `WasmHashMismatchError` and refuse to execute. If the descriptor lacks a hash, throw `WasmHashRequiredError` — do NOT fall back to "trust the gateway".

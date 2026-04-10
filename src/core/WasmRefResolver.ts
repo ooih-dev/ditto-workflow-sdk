@@ -1,11 +1,22 @@
+import { createHash } from 'crypto';
 import { Logger, getDefaultLogger } from './Logger';
+import { WasmHashMismatchError, WasmHashRequiredError } from './WorkflowError';
+
+/**
+ * Compute SHA-256 hex digest of a Buffer
+ */
+export function computeSha256Hex(data: Buffer): string {
+  return createHash('sha256').update(data).digest('hex');
+}
 
 /**
  * WASM Reference - describes a WASM step execution
  */
 export interface WasmRef {
-  /** SHA256 hash of WASM (hex, required) - WASM bytes are retrieved from MongoDB */
+  /** keccak256 wasm_id used to look up WASM bytes in the database */
   wasmHash: string;
+  /** SHA-256 hex digest of the expected WASM bytes (required for content verification) */
+  contentHash: string;
   /** Input JSON for WASM execution */
   input: any;
   /** Unique identifier for this WASM step */
@@ -132,11 +143,22 @@ export class WasmRefResolver {
 
     this.logger.info(`Executing WASM step: ${ref.id} (wasm_id: ${ref.wasmHash})`);
 
+    // Require contentHash for WASM content verification — never trust the gateway
+    if (!ref.contentHash) {
+      throw new WasmHashRequiredError(ref.id);
+    }
+
     // Fetch WASM bytes from MongoDB by wasm_id (bytes32 from contract)
     // Note: ref.wasmHash is actually the wasm_id (bytes32) used to look up in MongoDB
     const wasmBytes = await this.database.getWasmModule(ref.wasmHash);
     if (!wasmBytes) {
       throw new Error(`WASM module not found in database: ${ref.wasmHash}. Indexer may need to fetch it from IPFS.`);
+    }
+
+    // Verify content hash (SHA-256) before executing
+    const actualHash = computeSha256Hex(wasmBytes);
+    if (actualHash !== ref.contentHash) {
+      throw new WasmHashMismatchError(ref.contentHash, actualHash, ref.id);
     }
 
     // Convert to base64 for WASM client

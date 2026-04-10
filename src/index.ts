@@ -4,7 +4,7 @@ export { Job } from './core/Job';
 export { Workflow } from './core/Workflow';
 export * from './core/types';
 export { ConsoleLogger, PinoLogger, getDefaultLogger } from './core/Logger';
-export { WorkflowError, WorkflowErrorCode, WorkflowValidationError } from './core/WorkflowError';
+export { WorkflowError, WorkflowErrorCode, WorkflowValidationError, WasmHashMismatchError, WasmHashRequiredError } from './core/WorkflowError';
 export { WorkflowValidator, ValidatorStatus, validatorStatusMessage } from './core/validation/WorkflowValidator'
 export { WorkflowTrigger } from './core/Trigger';
 
@@ -50,6 +50,7 @@ export {
   isWasmRefString,
   serializeWasmRefContext,
   deserializeWasmRefContext,
+  computeSha256Hex,
   WASM_REF_PREFIX
 } from './core/WasmRefResolver';
 export type { WasmRef, ResolvedWasmRef, WasmRefContext } from './core/WasmRefResolver';
