@@ -40,7 +40,7 @@ Security audit (2026-04-09) identified 3 CRITICAL and 5 HIGH issues across Workf
 **Fix:** Add `ALLOWED_IPFS_GATEWAYS` constant (start with `https://ipfs-service.dittonetwork.io`, `https://ipfs.io`, `https://cloudflare-ipfs.com`). Validate every URL before fetch: must be https, host must be in allow-list, path must match `/ipfs/<cid>` or `/ipns/<name>`. Reject with `IpfsUrlValidationError` otherwise. Allow runtime extension via `IpfsStorage` constructor option `allowedGateways: string[]` for advanced users.
 **Tests:** Allowed gateway + valid CID passes; http:// rejected; non-allow-list host rejected; path traversal (`../`) rejected; query strings preserved but validated.
 
-## Task 6: [ ] DataRef ABI — fail loudly on missing returns
+## Task 6: [x] DataRef ABI — fail loudly on missing returns
 **Files:** `src/core/DataRefResolver.ts`
 **Problem:** When a referenced call has no ABI return definition, `DataRefResolver` silently returns `undefined`/empty, masking configuration bugs and allowing workflows to proceed with uninitialized data.
 **Fix:** If the ABI fragment for a DataRef lacks a `outputs` definition, throw `DataRefAbiError` at resolution time. Log the exact function signature for debuggability. Never return undefined from a DataRef resolution on "ABI says no output".

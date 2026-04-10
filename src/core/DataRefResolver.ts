@@ -2,6 +2,7 @@ import { createPublicClient, http, parseAbiItem, AbiFunction, Address, PublicCli
 import { getChainConfig } from '../utils/chainConfigProvider';
 import { authHttpConfig } from '../utils/httpTransport';
 import { Logger, getDefaultLogger } from './Logger';
+import { DataRefAbiError } from './WorkflowError';
 
 /**
  * Data Reference - describes a read call to fetch data from a contract
@@ -243,12 +244,34 @@ export class DataRefResolver {
     
     const client = this.getClient(ref.chainId);
     
-    // Ensure ABI has returns clause for parsing
-    const abiSignature = ref.abi.includes('returns') 
-      ? ref.abi 
-      : `${ref.abi} view returns (uint256)`; // Default fallback
-    
-    const abiItem = parseAbiItem(`function ${abiSignature}`) as AbiFunction;
+    // ABI must include a returns clause — fail loudly if missing
+    if (!ref.abi.includes('returns')) {
+      throw new DataRefAbiError(
+        `DataRef ABI for "${ref.target}.${ref.abi}" is missing a returns clause. ` +
+        `Specify return types explicitly, e.g. "${ref.abi} returns (uint256)".`,
+        ref.abi
+      );
+    }
+
+    const abiSignature = ref.abi;
+
+    let abiItem: AbiFunction;
+    try {
+      abiItem = parseAbiItem(`function ${abiSignature}`) as AbiFunction;
+    } catch (error) {
+      throw new DataRefAbiError(
+        `Malformed ABI for DataRef "${ref.target}.${ref.abi}": ${error instanceof Error ? error.message : 'Unknown error'}`,
+        ref.abi
+      );
+    }
+
+    if (!abiItem.outputs || abiItem.outputs.length === 0) {
+      throw new DataRefAbiError(
+        `DataRef ABI for "${ref.target}.${ref.abi}" has no output definitions. ` +
+        `Cannot resolve a DataRef with no return values.`,
+        ref.abi
+      );
+    }
     
     try {
       // Read at specific block for determinism!

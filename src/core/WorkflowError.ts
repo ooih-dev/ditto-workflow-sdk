@@ -8,6 +8,7 @@ export enum WorkflowErrorCode {
     WASM_HASH_REQUIRED = 'WASM_HASH_REQUIRED',
     SESSION_SIGNATURE_ERROR = 'SESSION_SIGNATURE_ERROR',
     IPFS_URL_VALIDATION = 'IPFS_URL_VALIDATION',
+    DATA_REF_ABI_ERROR = 'DATA_REF_ABI_ERROR',
 }
 
 export class WorkflowError extends Error {
@@ -68,6 +69,20 @@ export class IpfsUrlValidationError extends WorkflowError {
             { url }
         );
         this.name = 'IpfsUrlValidationError';
+    }
+}
+
+export class DataRefAbiError extends WorkflowError {
+    constructor(
+        message: string,
+        public readonly functionSignature: string
+    ) {
+        super(
+            WorkflowErrorCode.DATA_REF_ABI_ERROR,
+            message,
+            { functionSignature }
+        );
+        this.name = 'DataRefAbiError';
     }
 }
 
