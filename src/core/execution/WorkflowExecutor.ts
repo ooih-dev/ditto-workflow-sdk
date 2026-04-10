@@ -85,6 +85,8 @@ import { deserialize } from '../builders/WorkflowSerializer';
 import { Logger, getDefaultLogger } from '../Logger';
 import { DataRefResolver, DataRefContext } from '../DataRefResolver';
 import { WasmRefResolver, WasmRefContext, WasmRef } from '../WasmRefResolver';
+import { ValidatorStatus, WorkflowValidator } from '../validation/WorkflowValidator';
+import { WorkflowValidationError } from '../WorkflowError';
 
 /**
  * Execute a workflow with optional DataRef context for deterministic consensus.
@@ -143,7 +145,15 @@ export async function execute(
     wasmRefContext?: WasmRefContext;
 }> {
     workflow.typify();
-    
+
+    const validation = await WorkflowValidator.validate(workflow, executorAccount, ipfsServiceUrl);
+    if (validation.status !== ValidatorStatus.Success) {
+        throw new WorkflowValidationError(
+            `Workflow validation failed: ${validation.errors.join('; ')}`,
+            validation.errors
+        );
+    }
+
     // Collect all contexts from jobs
     const allContexts: DataRefContext[] = [];
     
@@ -668,10 +678,13 @@ export async function executeFromIpfs(
 }> {
     const data = await storage.download(ipfsHash);
     const workflow = await deserialize(data);
-    // const validation = await WorkflowValidator.validate(workflow, executorAccount, ipfsServiceUrl, { checkSessions: true });
-    // if (validation.status !== ValidatorStatus.Success) {
-    //     throw new Error(validatorStatusMessage(validation.status));
-    // }
+    const validation = await WorkflowValidator.validate(workflow, executorAccount, ipfsServiceUrl, { checkSessions: true });
+    if (validation.status !== ValidatorStatus.Success) {
+        throw new WorkflowValidationError(
+            `Workflow validation failed: ${validation.errors.join('; ')}`,
+            validation.errors
+        );
+    }
     const results = await execute(
         workflow, 
         executorAccount, 

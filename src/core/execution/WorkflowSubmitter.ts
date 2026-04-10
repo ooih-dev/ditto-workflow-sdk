@@ -4,7 +4,8 @@ import { WorkflowContract } from '../../contracts/WorkflowContract';
 import { serialize } from '../builders/WorkflowSerializer';
 import { Signer } from "@zerodev/sdk/types";
 import { UserOperationReceipt } from 'viem/account-abstraction';
-import { ValidatorStatus, validatorStatusMessage, WorkflowValidator } from '../validation/WorkflowValidator';
+import { ValidatorStatus, WorkflowValidator } from '../validation/WorkflowValidator';
+import { WorkflowValidationError } from '../WorkflowError';
 import { getDittoWFRegistryAddress } from '../../utils/chainConfigProvider';
 
 export async function submitWorkflow(
@@ -22,11 +23,16 @@ export async function submitWorkflow(
     userOpHashes: UserOperationReceipt[];
 }> {
     workflow.typify();
+
+    const validation = await WorkflowValidator.validate(workflow, owner, ipfsServiceUrl);
+    if (validation.status !== ValidatorStatus.Success) {
+        throw new WorkflowValidationError(
+            `Workflow validation failed: ${validation.errors.join('; ')}`,
+            validation.errors
+        );
+    }
+
     const serializedData = await serialize(workflow, executorAddress, owner, prodContract, ipfsServiceUrl, switchChain, accessToken);
-    // const validation = await WorkflowValidator.validate(workflow, owner, ipfsServiceUrl);
-    // if (validation.status !== ValidatorStatus.Success) {
-    //     throw new Error(validatorStatusMessage(validation.status));
-    // }
     const ipfsHash = await storage.upload(serializedData);
 
     const workflowContract = new WorkflowContract(getDittoWFRegistryAddress(prodContract));

@@ -15,4 +15,14 @@ export class WorkflowError extends Error {
         super(message);
         this.name = 'WorkflowError';
     }
+}
+
+export class WorkflowValidationError extends WorkflowError {
+    constructor(
+        message: string,
+        public readonly validationErrors: string[]
+    ) {
+        super(WorkflowErrorCode.VALIDATION_FAILED, message, validationErrors);
+        this.name = 'WorkflowValidationError';
+    }
 } 

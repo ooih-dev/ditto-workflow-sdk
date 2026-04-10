@@ -20,7 +20,8 @@
     "example:execute": "ts-node examples/execute-workflow.ts",
     "example:dataref": "ts-node examples/data-ref-workflow.ts",
     "execute": "ts-node examples/execute-workflow.ts",
-    "deploy-account": "ts-node scripts/deploy-account.ts"
+    "deploy-account": "ts-node scripts/deploy-account.ts",
+    "test": "jest --forceExit"
   },
   "keywords": [
     "workflow",

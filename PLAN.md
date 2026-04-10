@@ -10,7 +10,7 @@ Security audit (2026-04-09) identified 3 CRITICAL and 5 HIGH issues across Workf
 - Preserve backward compatibility where possible; if a breaking change is required, add a compatibility note in the commit body.
 - Before committing each task: run `npm run build` and `npm test`. Lint must pass (`npm run lint`). Do not commit red builds.
 
-## Task 1: [ ] Re-enable workflow validation on submit and execute
+## Task 1: [x] Re-enable workflow validation on submit and execute
 **Files:** `src/core/execution/WorkflowSubmitter.ts`, `src/core/execution/WorkflowExecutor.ts`, `src/core/validation/WorkflowValidator.ts`
 **Problem:** Workflow schema validation was disabled in the submit/execute paths, allowing malformed workflows through to on-chain execution. Zod schema (`WorkflowSchema.ts`) exists but is bypassed.
 **Fix:** Call `WorkflowValidator.validate(workflow)` at the start of both `submit()` and `execute()`. Throw `WorkflowValidationError` (or extend `WorkflowError`) with the aggregated Zod issues on failure. No silent catches.
