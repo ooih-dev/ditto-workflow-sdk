@@ -8,7 +8,7 @@ import {
     toTimestampPolicy,
     SudoPolicyParams
 } from "@zerodev/permissions/policies";
-import { DittoWFRegistryAbi } from '../../utils/constants';
+import { DittoWFRegistryAbi, MAX_UINT256, DEFAULT_VALUE_LIMIT } from '../../utils/constants';
 import { getDittoWFRegistryAddress } from '../../utils/chainConfigProvider';
 import { Address, concatHex } from 'viem';
 import { Policy } from '@zerodev/permissions/types';
@@ -132,20 +132,36 @@ export function buildSudoPolicy(): Policy {
     }
 }
 
-export function buildPolicies(workflow: Workflow, prodContract: boolean, job: Job): ReturnType<typeof toCallPolicy>[] {
+/**
+ * Options for buildPolicies controlling value limit behavior.
+ */
+export interface BuildPoliciesOptions {
+    /**
+     * When true, allows MAX_UINT256 as a valueLimit for dynamic references (WASM/DataRef).
+     * Without this flag, dynamic references are capped at DEFAULT_VALUE_LIMIT (1 ETH).
+     */
+    allowUnlimited?: boolean;
+}
 
-    // Max uint256 for unlimited value transfers (when using WASM/DataRef references)
-    const MAX_VALUE_LIMIT = BigInt('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff');
-    
+export function buildPolicies(workflow: Workflow, prodContract: boolean, job: Job, options?: BuildPoliciesOptions): ReturnType<typeof toCallPolicy>[] {
+
+    const allowUnlimited = options?.allowUnlimited === true;
+
     const permissions: Permission[] = job.steps.map(step => {
         const abiFunctions = step.getAbi();
         const abiFunction = abiFunctions[0];
-        // If value is a WASM/DataRef reference (string), use max value limit
-        // since the actual value will be resolved at execution time
+        // If value is a WASM/DataRef reference (string), use capped value limit
+        // unless allowUnlimited is explicitly set
         let valueLimit: bigint;
         if (typeof step.value === 'string' && (step.value.startsWith('$wasm:') || step.value.startsWith('$data:'))) {
-            valueLimit = MAX_VALUE_LIMIT; // Allow any value for dynamic references
+            valueLimit = allowUnlimited ? MAX_UINT256 : DEFAULT_VALUE_LIMIT;
         } else if (typeof step.value === 'bigint') {
+            if (step.value === MAX_UINT256 && !allowUnlimited) {
+                throw new Error(
+                    'Explicit MAX_UINT256 valueLimit requires allowUnlimited: true opt-in. ' +
+                    'This prevents accidental unlimited spend authority on session permissions.'
+                );
+            }
             valueLimit = step.value;
         } else {
             valueLimit = BigInt(0);

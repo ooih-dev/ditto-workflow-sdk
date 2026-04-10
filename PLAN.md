@@ -28,7 +28,7 @@ Security audit (2026-04-09) identified 3 CRITICAL and 5 HIGH issues across Workf
 **Fix:** On any signature verification failure (stale nonce, expired timestamp, bad signature, unknown signer), throw `SessionSignatureError` immediately and abort the operation. No fallback path. Return value must never be "unverified" or "best-effort".
 **Tests:** Valid signature passes; expired session throws; stale nonce throws; wrong signer throws; tampered payload throws. All error paths must be covered.
 
-## Task 4: [ ] Cap `valueLimit` in PermissionBuilder
+## Task 4: [x] Cap `valueLimit` in PermissionBuilder
 **Files:** `src/core/builders/PermissionBuilder.ts`, `src/utils/constants.ts`
 **Problem:** `valueLimit` defaults to `MAX_UINT256`, meaning a created session permission has unlimited spend authority. A bug or misuse can drain the smart account.
 **Fix:** Introduce a `DEFAULT_VALUE_LIMIT` in `constants.ts` set to a conservative value (e.g. `parseEther("1")` — 1 ETH equivalent). `PermissionBuilder` must require an explicit `valueLimit` OR fall back to `DEFAULT_VALUE_LIMIT`. Throw if caller explicitly passes `MAX_UINT256` without also setting `allowUnlimited: true` opt-in. Document the opt-in flag in JSDoc.
