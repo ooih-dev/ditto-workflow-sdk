@@ -58,7 +58,7 @@ Security audit (2026-04-09) identified 3 CRITICAL and 5 HIGH issues across Workf
 **Fix:** Remove the swallowing catch. Let `SessionSignatureError` and all session-related errors bubble to the caller. If any try/catch wraps the session path, it must re-throw (or wrap in `WorkflowError` preserving `cause`). `execute()` return type must never encode "unknown" state.
 **Tests:** Successful session proceeds; session error propagates to caller; error has original `cause` chain intact.
 
-## Task 9: [ ] Security regression test suite
+## Task 9: [x] Security regression test suite
 **Files:** `test/security.spec.ts` (new), optionally supporting fixtures in `test/fixtures/`
 **Problem:** No single test file covers the security-critical invariants — fixes can regress silently.
 **Fix:** Create `test/security.spec.ts` that imports and exercises the fixes from Tasks 1-8 end-to-end as integration-ish scenarios:
