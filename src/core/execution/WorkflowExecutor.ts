@@ -233,6 +233,10 @@ export async function execute(
                     wasmRefContext: result.wasmRefContext,
                 };
             } catch (error) {
+                // Session and workflow errors must propagate to the caller — never swallow them
+                if (error instanceof SessionSignatureError || error instanceof WorkflowValidationError) {
+                    throw error;
+                }
                 logger.error(`❌ Session ${i + 1} failed:`, error);
                 const finish = new Date().toISOString();
                 return {
@@ -633,6 +637,10 @@ export async function executeJob(
             wasmRefContext: resolvedWasmRefContext,
         };
     } catch (error) {
+        // Session and workflow errors must propagate — never return fake-success
+        if (error instanceof SessionSignatureError || error instanceof WorkflowValidationError) {
+            throw error;
+        }
         return {
             userOp: userOperation,
             error: error instanceof Error ? error.message : 'Unknown error',

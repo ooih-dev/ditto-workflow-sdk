@@ -52,7 +52,7 @@ Security audit (2026-04-09) identified 3 CRITICAL and 5 HIGH issues across Workf
 **Fix:** Introduce `MAX_SERIALIZE_DEPTH = 32`. Track depth through recursion; throw `WorkflowSerializeDepthError` if exceeded. When iterating object keys, skip `__proto__`, `constructor`, `prototype`. Use `Object.create(null)` or a `Map` for intermediate accumulators where possible.
 **Tests:** Depth-31 object serializes; depth-33 throws; object with `__proto__` key does not mutate Object prototype; `constructor` key ignored; normal workflow round-trips unchanged.
 
-## Task 8: [ ] Propagate session errors from WorkflowExecutor
+## Task 8: [x] Propagate session errors from WorkflowExecutor
 **Files:** `src/core/execution/WorkflowExecutor.ts`, `src/core/builders/SessionService.ts`
 **Problem:** When `SessionService` throws during workflow execution, the error is swallowed in a try/catch and execution continues returning a fake-success result. Callers cannot distinguish success from silent failure.
 **Fix:** Remove the swallowing catch. Let `SessionSignatureError` and all session-related errors bubble to the caller. If any try/catch wraps the session path, it must re-throw (or wrap in `WorkflowError` preserving `cause`). `execute()` return type must never encode "unknown" state.
