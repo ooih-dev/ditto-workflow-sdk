@@ -4,7 +4,7 @@ export { Job } from './core/Job';
 export { Workflow } from './core/Workflow';
 export * from './core/types';
 export { ConsoleLogger, PinoLogger, getDefaultLogger } from './core/Logger';
-export { WorkflowError, WorkflowErrorCode, WorkflowValidationError, WasmHashMismatchError, WasmHashRequiredError, SessionSignatureError } from './core/WorkflowError';
+export { WorkflowError, WorkflowErrorCode, WorkflowValidationError, WasmHashMismatchError, WasmHashRequiredError, SessionSignatureError, IpfsUrlValidationError } from './core/WorkflowError';
 export { WorkflowValidator, ValidatorStatus, validatorStatusMessage } from './core/validation/WorkflowValidator'
 export { WorkflowTrigger } from './core/Trigger';
 
@@ -14,14 +14,15 @@ export { WorkflowBuilder } from './builders/WorkflowBuilder';
 
 // Storage exports
 export type { IWorkflowStorage, SerializedWorkflowData } from './storage/IWorkflowStorage';
-export { IpfsStorage } from './storage/IpfsStorage';
+export { IpfsStorage, validateIpfsUrl } from './storage/IpfsStorage';
+export type { IpfsStorageOptions } from './storage/IpfsStorage';
 
 // Contract exports
 export { WorkflowContract } from './contracts/WorkflowContract';
 
 // Utility exports
 export { getChainConfig, getDittoExecutorAddress } from './utils/chainConfigProvider';
-export { ChainId } from './utils/constants';
+export { ChainId, ALLOWED_IPFS_GATEWAYS } from './utils/constants';
 
 // Workflow execution and serialization exports
 export { execute, executeFromIpfs, executeJob } from './core/execution/WorkflowExecutor';

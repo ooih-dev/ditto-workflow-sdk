@@ -7,6 +7,7 @@ export enum WorkflowErrorCode {
     WASM_HASH_MISMATCH = 'WASM_HASH_MISMATCH',
     WASM_HASH_REQUIRED = 'WASM_HASH_REQUIRED',
     SESSION_SIGNATURE_ERROR = 'SESSION_SIGNATURE_ERROR',
+    IPFS_URL_VALIDATION = 'IPFS_URL_VALIDATION',
 }
 
 export class WorkflowError extends Error {
@@ -53,6 +54,20 @@ export class WasmHashRequiredError extends WorkflowError {
             { wasmId }
         );
         this.name = 'WasmHashRequiredError';
+    }
+}
+
+export class IpfsUrlValidationError extends WorkflowError {
+    constructor(
+        message: string,
+        public readonly url: string
+    ) {
+        super(
+            WorkflowErrorCode.IPFS_URL_VALIDATION,
+            message,
+            { url }
+        );
+        this.name = 'IpfsUrlValidationError';
     }
 }
 

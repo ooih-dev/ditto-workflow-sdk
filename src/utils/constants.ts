@@ -33,3 +33,13 @@ export const MAX_UINT256 = BigInt('0xfffffffffffffffffffffffffffffffffffffffffff
  * To use MAX_UINT256, callers must explicitly opt in with `allowUnlimited: true`.
  */
 export const DEFAULT_VALUE_LIMIT = BigInt('1000000000000000000'); // 1e18 (1 ETH)
+
+/**
+ * Default allowed IPFS gateways. Only these hosts are permitted for IPFS fetches.
+ * Advanced users can extend this list via the `allowedGateways` constructor option on IpfsStorage.
+ */
+export const ALLOWED_IPFS_GATEWAYS: readonly string[] = [
+  'https://ipfs-service.dittonetwork.io',
+  'https://ipfs.io',
+  'https://cloudflare-ipfs.com',
+];

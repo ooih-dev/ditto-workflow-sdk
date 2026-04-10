@@ -34,7 +34,7 @@ Security audit (2026-04-09) identified 3 CRITICAL and 5 HIGH issues across Workf
 **Fix:** Introduce a `DEFAULT_VALUE_LIMIT` in `constants.ts` set to a conservative value (e.g. `parseEther("1")` — 1 ETH equivalent). `PermissionBuilder` must require an explicit `valueLimit` OR fall back to `DEFAULT_VALUE_LIMIT`. Throw if caller explicitly passes `MAX_UINT256` without also setting `allowUnlimited: true` opt-in. Document the opt-in flag in JSDoc.
 **Tests:** Default usage caps at `DEFAULT_VALUE_LIMIT`; explicit lower value honored; `MAX_UINT256` without opt-in throws; `allowUnlimited: true` permits `MAX_UINT256`.
 
-## Task 5: [ ] Validate IPFS URL / gateway against allow-list
+## Task 5: [x] Validate IPFS URL / gateway against allow-list
 **Files:** `src/storage/IpfsStorage.ts`, `src/utils/constants.ts`
 **Problem:** `IpfsStorage` accepts arbitrary IPFS gateway URLs from workflow data. A malicious workflow can redirect fetches to attacker-controlled hosts (RPC hijack analog).
 **Fix:** Add `ALLOWED_IPFS_GATEWAYS` constant (start with `https://ipfs-service.dittonetwork.io`, `https://ipfs.io`, `https://cloudflare-ipfs.com`). Validate every URL before fetch: must be https, host must be in allow-list, path must match `/ipfs/<cid>` or `/ipns/<name>`. Reject with `IpfsUrlValidationError` otherwise. Allow runtime extension via `IpfsStorage` constructor option `allowedGateways: string[]` for advanced users.

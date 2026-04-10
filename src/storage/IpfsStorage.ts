@@ -1,8 +1,68 @@
 import { createHash } from 'crypto';
 import { IWorkflowStorage, SerializedWorkflowData } from './IWorkflowStorage';
+import { IpfsUrlValidationError } from '../core/WorkflowError';
+import { ALLOWED_IPFS_GATEWAYS } from '../utils/constants';
 
 const TIMEOUT_MS = 30000;
 const RETRIES = 3;
+
+/** Pattern for valid IPFS paths: /ipfs/<CID> or /ipns/<name>, with optional trailing path segments */
+const VALID_IPFS_PATH_RE = /^\/ip[fn]s\/[A-Za-z0-9][\w.-]*(?:\/[\w.@%:~-]*)*$/;
+
+/**
+ * Validate an IPFS URL against the allow-list of gateways.
+ * Checks: must be https, host must be in allow-list, path must match /ipfs/<cid> or /ipns/<name>,
+ * no path traversal.
+ */
+export function validateIpfsUrl(url: string, allowedGateways: readonly string[]): void {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new IpfsUrlValidationError(`Invalid IPFS URL: ${url}`, url);
+  }
+
+  if (parsed.protocol !== 'https:') {
+    throw new IpfsUrlValidationError(
+      `IPFS URL must use https protocol, got ${parsed.protocol} in ${url}`,
+      url
+    );
+  }
+
+  const hostMatch = allowedGateways.some((gw) => {
+    try {
+      const gwUrl = new URL(gw);
+      return gwUrl.hostname === parsed.hostname;
+    } catch {
+      return false;
+    }
+  });
+
+  if (!hostMatch) {
+    throw new IpfsUrlValidationError(
+      `IPFS gateway host "${parsed.hostname}" is not in the allow-list`,
+      url
+    );
+  }
+
+  // Check for path traversal
+  if (parsed.pathname.includes('..')) {
+    throw new IpfsUrlValidationError(
+      `IPFS URL contains path traversal: ${url}`,
+      url
+    );
+  }
+
+  // Path must match /ipfs/<cid> or /ipns/<name> pattern
+  // Allow service-style paths like /ipfs/read/<cid> as used by the Ditto IPFS service
+  const isValidIpfsPath = VALID_IPFS_PATH_RE.test(parsed.pathname);
+  if (!isValidIpfsPath) {
+    throw new IpfsUrlValidationError(
+      `IPFS URL path does not match expected pattern (/ipfs/<cid> or /ipns/<name>): ${parsed.pathname}`,
+      url
+    );
+  }
+}
 
 async function fetchWithRetry(url: string, options: RequestInit, retries = RETRIES): Promise<Response> {
   let attempt = 0;
@@ -27,8 +87,29 @@ async function fetchWithRetry(url: string, options: RequestInit, retries = RETRI
   throw new Error('Failed to fetch with retry');
 }
 
+export interface IpfsStorageOptions {
+  /** Additional IPFS gateway origins to allow beyond the default list */
+  allowedGateways?: string[];
+}
+
 export class IpfsStorage implements IWorkflowStorage {
-  constructor(private readonly ipfsServiceUrl: string) { }
+  private readonly allowedGateways: readonly string[];
+
+  constructor(
+    private readonly ipfsServiceUrl: string,
+    options?: IpfsStorageOptions
+  ) {
+    const extra = options?.allowedGateways ?? [];
+    this.allowedGateways = [...ALLOWED_IPFS_GATEWAYS, ...extra];
+  }
+
+  /**
+   * Validate a URL that will be fetched. Constructs the full URL from the
+   * service base + path and validates it against the gateway allow-list.
+   */
+  private validateUrl(fullUrl: string): void {
+    validateIpfsUrl(fullUrl, this.allowedGateways);
+  }
 
   /**
    * Download raw bytes from IPFS and verify against an expected SHA-256 hash.
@@ -38,7 +119,9 @@ export class IpfsStorage implements IWorkflowStorage {
    * @throws Error if hash does not match or content is empty
    */
   async downloadAndVerify(ipfsHash: string, expectedContentHash: string): Promise<Buffer> {
-    const response = await fetchWithRetry(`${this.ipfsServiceUrl}/ipfs/read/${ipfsHash}`, {
+    const url = `${this.ipfsServiceUrl}/ipfs/read/${ipfsHash}`;
+    this.validateUrl(url);
+    const response = await fetchWithRetry(url, {
       method: 'GET',
     });
 
@@ -64,7 +147,9 @@ export class IpfsStorage implements IWorkflowStorage {
   }
 
   async upload(data: SerializedWorkflowData): Promise<string> {
-    const response = await fetchWithRetry(`${this.ipfsServiceUrl}/ipfs/upload`, {
+    const url = `${this.ipfsServiceUrl}/ipfs/upload`;
+    this.validateUrl(url);
+    const response = await fetchWithRetry(url, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -80,7 +165,9 @@ export class IpfsStorage implements IWorkflowStorage {
   }
 
   async download(ipfsHash: string): Promise<SerializedWorkflowData> {
-    const response = await fetchWithRetry(`${this.ipfsServiceUrl}/ipfs/read/${ipfsHash}`, {
+    const url = `${this.ipfsServiceUrl}/ipfs/read/${ipfsHash}`;
+    this.validateUrl(url);
+    const response = await fetchWithRetry(url, {
       method: 'GET',
     });
 
