@@ -6,6 +6,7 @@ export enum WorkflowErrorCode {
     VALIDATION_FAILED = 'VALIDATION_FAILED',
     WASM_HASH_MISMATCH = 'WASM_HASH_MISMATCH',
     WASM_HASH_REQUIRED = 'WASM_HASH_REQUIRED',
+    SESSION_SIGNATURE_ERROR = 'SESSION_SIGNATURE_ERROR',
 }
 
 export class WorkflowError extends Error {
@@ -53,4 +54,22 @@ export class WasmHashRequiredError extends WorkflowError {
         );
         this.name = 'WasmHashRequiredError';
     }
-} 
+}
+
+export class SessionSignatureError extends WorkflowError {
+    constructor(
+        message: string,
+        public readonly reason: 'expired' | 'stale_nonce' | 'invalid_signature' | 'unknown_signer' | 'tampered_payload' | 'missing_session' | 'parse_error',
+        cause?: Error
+    ) {
+        super(
+            WorkflowErrorCode.SESSION_SIGNATURE_ERROR,
+            message,
+            { reason, cause: cause?.message }
+        );
+        this.name = 'SessionSignatureError';
+        if (cause) {
+            this.cause = cause;
+        }
+    }
+}

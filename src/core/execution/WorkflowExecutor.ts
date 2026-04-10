@@ -74,9 +74,12 @@ function forceEnableModeInSession(sessionStr: string): string {
         // Convert to base64url (remove padding, replace + with -, / with _)
         return encoded.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
     } catch (e) {
-        // If parsing fails, return original (let SDK handle any errors)
-        console.warn('Failed to patch session for ENABLE mode:', e);
-        return sessionStr;
+        // Fail-closed: do not silently return the unparseable session
+        throw new SessionSignatureError(
+            `Failed to parse session for ENABLE mode patching: ${e instanceof Error ? e.message : 'unknown error'}`,
+            'tampered_payload',
+            e instanceof Error ? e : undefined
+        );
     }
 }
 import { Workflow } from '../Workflow';
@@ -86,7 +89,8 @@ import { Logger, getDefaultLogger } from '../Logger';
 import { DataRefResolver, DataRefContext } from '../DataRefResolver';
 import { WasmRefResolver, WasmRefContext, WasmRef } from '../WasmRefResolver';
 import { ValidatorStatus, WorkflowValidator } from '../validation/WorkflowValidator';
-import { WorkflowValidationError } from '../WorkflowError';
+import { WorkflowValidationError, SessionSignatureError } from '../WorkflowError';
+import { validateSerializedSession } from '../builders/SessionService';
 
 /**
  * Execute a workflow with optional DataRef context for deterministic consensus.
@@ -315,6 +319,9 @@ export async function executeJob(
     /** WASM ref context - pass to operators for deterministic replay */
     wasmRefContext?: WasmRefContext,
 }> {
+    // Fail-closed: validate the serialized session before proceeding
+    validateSerializedSession(job.session as string);
+
     const chainConfig = getChainConfig(ipfsServiceUrl);
     const chain = chainConfig[job.chainId]?.chain;
     const rpcUrl = chainConfig[job.chainId]?.rpcUrl;
@@ -564,8 +571,12 @@ export async function executeJob(
     try {
         signature = await sessionKeyAccount.signUserOperation(userOperation);
     } catch (error) {
-        console.log(error);
-        signature = userOperation.signature;
+        // Fail-closed: do not fall back to the unsigned/default signature
+        throw new SessionSignatureError(
+            `Failed to sign user operation: ${error instanceof Error ? error.message : 'unknown error'}`,
+            'invalid_signature',
+            error instanceof Error ? error : undefined
+        );
     }
 
     try {

@@ -22,7 +22,7 @@ Security audit (2026-04-09) identified 3 CRITICAL and 5 HIGH issues across Workf
 **Fix:** Require an expected `hash` (sha256 of the WASM bytes, hex-encoded) in the DataRef / WasmRef descriptor. After download, compute sha256 of the bytes and compare. On mismatch, throw `WasmHashMismatchError` and refuse to execute. If the descriptor lacks a hash, throw `WasmHashRequiredError` — do NOT fall back to "trust the gateway".
 **Tests:** Hash match passes; hash mismatch throws; missing hash throws; empty blob handled. Use a deterministic small WASM fixture under `test/fixtures/`.
 
-## Task 3: [ ] Fail-closed on stale/invalid session signature
+## Task 3: [x] Fail-closed on stale/invalid session signature
 **Files:** `src/core/builders/SessionService.ts`
 **Problem:** When session signature verification fails (stale, expired, or invalid), the code currently falls back to permitting the operation ("fail-open"). This defeats the purpose of session auth.
 **Fix:** On any signature verification failure (stale nonce, expired timestamp, bad signature, unknown signer), throw `SessionSignatureError` immediately and abort the operation. No fallback path. Return value must never be "unverified" or "best-effort".

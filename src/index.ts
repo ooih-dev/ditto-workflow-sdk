@@ -4,7 +4,7 @@ export { Job } from './core/Job';
 export { Workflow } from './core/Workflow';
 export * from './core/types';
 export { ConsoleLogger, PinoLogger, getDefaultLogger } from './core/Logger';
-export { WorkflowError, WorkflowErrorCode, WorkflowValidationError, WasmHashMismatchError, WasmHashRequiredError } from './core/WorkflowError';
+export { WorkflowError, WorkflowErrorCode, WorkflowValidationError, WasmHashMismatchError, WasmHashRequiredError, SessionSignatureError } from './core/WorkflowError';
 export { WorkflowValidator, ValidatorStatus, validatorStatusMessage } from './core/validation/WorkflowValidator'
 export { WorkflowTrigger } from './core/Trigger';
 
@@ -27,7 +27,7 @@ export { ChainId } from './utils/constants';
 export { execute, executeFromIpfs, executeJob } from './core/execution/WorkflowExecutor';
 export { submitWorkflow } from './core/execution/WorkflowSubmitter';
 export { serialize, deserialize } from './core/builders/WorkflowSerializer';
-export { createSession } from './core/builders/SessionService';
+export { createSession, validateSessionParams, validateSerializedSession } from './core/builders/SessionService';
 
 // Data Reference exports - for fetching data from one contract and passing to another
 export { 
